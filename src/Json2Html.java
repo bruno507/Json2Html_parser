@@ -1,39 +1,43 @@
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-void main() throws Exception {
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
-    ObjectMapper mapper = new ObjectMapper();
-    JsonNode root = mapper.readTree(new File("input3.json"));
+public final class Json2Html {
 
-    StringBuilder html = new StringBuilder();
+   private static final StringBuilder html = new StringBuilder();
+   private static JsonNode root;
 
-    html.append("<!DOCTYPE ")
-            .append(root.path("doctype").asText())
-            .append(">\n");
+    public static void renderDoc(String file) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        root = mapper.readTree(new File(file));
+        html.append("<!DOCTYPE ")
+                .append(root.path("doctype").asText())
+                .append(">\n");
 
-    if (root.path("language").isTextual()) {
-    html.append("<html lang=\"")
-            .append(root.path("language").asText())
-            .append("\">\n");
-    }
-    else {
-        html.append("<html>\n");
-    }
-
-    renderHead(root.path("head"), html);
-    renderBody(root.path("body"), html);
-
+        if (root.path("language").isTextual()) {
+            html.append("<html lang=\"")
+                    .append(root.path("language").asText())
+                    .append("\">\n");
+        } else {
+            html.append("<html>\n");
+        }
+    renderHead();
+    renderBody();
     html.append("</html>");
-
+    writeToFile();
+    }
+private static void writeToFile() throws IOException {
     try (FileWriter writer = new FileWriter("output.html")) {
         writer.write(html.toString());
+        }
+        IO.println("HTML writen to file");
     }
 
-    IO.println("HTML done");
-}
-
-private static void renderHead(JsonNode head, StringBuilder html) {
+private static void renderHead() {
+    JsonNode head = root.path("head");
     html.append("\t<head>\n");
 
     JsonNode meta = head.path("meta");
@@ -76,39 +80,38 @@ private static void renderHead(JsonNode head, StringBuilder html) {
             html.append(">\n");
         }
     }
-
     html.append("\t\t<title>")
             .append(head.path("title").asText())
             .append("</title>\n");
-
     html.append("\t</head>\n");
 }
 
-private static void renderBody(JsonNode body, StringBuilder html) {
-    html.append("\t<body");
+private static void renderBody() {
+    JsonNode body = root.path("body");
+        html.append("\t<body");
 
     JsonNode attrs = body.path("attributes");
     if (!attrs.isMissingNode()) {
-        appendAttributes(attrs, html);
+        appendAttributes(attrs);
     }
 
     html.append(">\n");
 
     body.fields().forEachRemaining(e -> {
         if (!e.getKey().equals("attributes")) {
-            renderElement(e.getKey(), e.getValue(), html);
+            renderElement(e.getKey(), e.getValue());
         }
     });
 
     html.append("\t</body>\n");
 }
 
-private static void renderElement(String tag, JsonNode node, StringBuilder html) {
+private static void renderElement(String tag, JsonNode node) {
 
     html.append("\t\t<").append(tag);
 
     if (node.isObject() && node.has("attributes")) {
-        appendAttributes(node.get("attributes"), html);
+        appendAttributes(node.get("attributes"));
     }
 
     html.append(">");
@@ -120,14 +123,14 @@ private static void renderElement(String tag, JsonNode node, StringBuilder html)
         html.append("\n\t");
         node.fields().forEachRemaining(e -> {
             if (!e.getKey().equals("attributes")) {
-                renderElement(e.getKey(), e.getValue(), html);
+                renderElement(e.getKey(), e.getValue());
             }
         });
         html.append("\t\t</").append(tag).append(">\n");
     }
 }
 
-private static void appendAttributes(JsonNode attrs, StringBuilder html) {
+private static void appendAttributes(JsonNode attrs) {
     attrs.fields().forEachRemaining(e -> {
         if (e.getValue().isObject()) {
             html.append(" ")
@@ -149,4 +152,4 @@ private static void appendAttributes(JsonNode attrs, StringBuilder html) {
                     .append("\"");
         }
     });
-}
+}}
