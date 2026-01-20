@@ -7,10 +7,11 @@ import java.io.IOException;
 
 public final class Json2Html {
 
-    private static final StringBuilder html = new StringBuilder();
+   // private static final StringBuilder html = new StringBuilder();
 
     public static void renderDoc(String fileIn, String fileOut) throws IOException {
 
+        StringBuilder html = new StringBuilder();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(new File(fileIn + ".json"));
         html.append("<!DOCTYPE ")
@@ -24,21 +25,32 @@ public final class Json2Html {
         } else {
             html.append("<html>\n");
         }
-    renderHead(root.path("head"));
-    renderBody(root.path("body"));
+    html.append(renderHead(root.path("head")));
+    html.append(renderBody(root.path("body")));
     html.append("</html>");
-    writeToFile(fileOut);
+    writeToFile(fileOut, html);
     }
-private static void writeToFile(String out) throws IOException {
+private static void writeToFile(String out, StringBuilder html) throws IOException {
     try (FileWriter writer = new FileWriter(out + ".html")) {
         writer.write(html.toString());
         }
-        IO.println("HTML writen to file");
+        IO.println("HTML written to file" + out + ".html");
     }
 
-private static void renderHead(JsonNode head) {
-    html.append("\t<head>\n");
+private static String indent(int x) {
+    String add = "\t";
+    String indent = "";
+    while (x > 0) {
+        indent = indent.concat(add);
+        x--;
+    }
+    return indent;
+    }
 
+private static StringBuilder renderHead(JsonNode head) {
+    indent(2);
+    StringBuilder html = new StringBuilder();
+    html.append("\t<head>\n");
     JsonNode meta = head.path("meta");
     meta.fields().forEachRemaining(e -> {
         if ("charset".equalsIgnoreCase(e.getKey())) {
@@ -79,37 +91,42 @@ private static void renderHead(JsonNode head) {
             html.append(">\n");
         }
     }
-    html.append("\t\t<title>")
+    if (head.path("title").isTextual()) {
+        html.append("\t\t<title>")
             .append(head.path("title").asText())
             .append("</title>\n");
+    }
     html.append("\t</head>\n");
+    return html;
 }
 
-private static void renderBody(JsonNode body) {
+private static StringBuilder renderBody(JsonNode body) {
+    StringBuilder html = new StringBuilder();
         html.append("\t<body");
 
     JsonNode attrs = body.path("attributes");
     if (!attrs.isMissingNode()) {
-        appendAttributes(attrs);
+        html.append(appendAttributes(attrs));
     }
 
     html.append(">\n");
 
     body.fields().forEachRemaining(e -> {
         if (!e.getKey().equals("attributes")) {
-            renderElement(e.getKey(), e.getValue());
+            html.append(renderElement(e.getKey(), e.getValue()));
         }
     });
 
     html.append("\t</body>\n");
+    return html;
 }
 
-private static void renderElement(String tag, JsonNode node) {
-
+private static StringBuilder renderElement(String tag, JsonNode node) {
+    StringBuilder html = new StringBuilder();
     html.append("\t\t<").append(tag);
 
     if (node.isObject() && node.has("attributes")) {
-        appendAttributes(node.get("attributes"));
+        html.append(appendAttributes(node.get("attributes")));
     }
 
     html.append(">");
@@ -121,15 +138,17 @@ private static void renderElement(String tag, JsonNode node) {
         html.append("\n\t");
         node.fields().forEachRemaining(e -> {
             if (!e.getKey().equals("attributes")) {
-                renderElement(e.getKey(), e.getValue());
+                html.append(renderElement(e.getKey(), e.getValue()));
             }
         });
         html.append("\t\t</").append(tag).append(">\n");
     }
+    return html;
 }
 
-private static void appendAttributes(JsonNode attrs) {
-    attrs.fields().forEachRemaining(e -> {
+private static StringBuilder appendAttributes(JsonNode attrs) {
+    StringBuilder html = new StringBuilder();
+        attrs.fields().forEachRemaining(e -> {
         if (e.getValue().isObject()) {
             html.append(" ")
                     .append(e.getKey())
@@ -150,4 +169,5 @@ private static void appendAttributes(JsonNode attrs) {
                     .append("\"");
         }
     });
+        return html;
 }}
