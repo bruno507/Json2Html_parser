@@ -7,12 +7,12 @@ import java.io.IOException;
 
 public final class Json2Html {
 
-   private static final StringBuilder html = new StringBuilder();
-   private static JsonNode root;
+    private static final StringBuilder html = new StringBuilder();
 
-    public static void renderDoc(String file) throws IOException {
+    public static void renderDoc(String fileIn, String fileOut) throws IOException {
+
         ObjectMapper mapper = new ObjectMapper();
-        root = mapper.readTree(new File(file));
+        JsonNode root = mapper.readTree(new File(fileIn + ".json"));
         html.append("<!DOCTYPE ")
                 .append(root.path("doctype").asText())
                 .append(">\n");
@@ -24,20 +24,19 @@ public final class Json2Html {
         } else {
             html.append("<html>\n");
         }
-    renderHead();
-    renderBody();
+    renderHead(root.path("head"));
+    renderBody(root.path("body"));
     html.append("</html>");
-    writeToFile();
+    writeToFile(fileOut);
     }
-private static void writeToFile() throws IOException {
-    try (FileWriter writer = new FileWriter("output.html")) {
+private static void writeToFile(String out) throws IOException {
+    try (FileWriter writer = new FileWriter(out + ".html")) {
         writer.write(html.toString());
         }
         IO.println("HTML writen to file");
     }
 
-private static void renderHead() {
-    JsonNode head = root.path("head");
+private static void renderHead(JsonNode head) {
     html.append("\t<head>\n");
 
     JsonNode meta = head.path("meta");
@@ -86,8 +85,7 @@ private static void renderHead() {
     html.append("\t</head>\n");
 }
 
-private static void renderBody() {
-    JsonNode body = root.path("body");
+private static void renderBody(JsonNode body) {
         html.append("\t<body");
 
     JsonNode attrs = body.path("attributes");
