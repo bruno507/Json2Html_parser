@@ -6,7 +6,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 public final class Json2Html {
-
      public static void renderDoc(String fileIn, String fileOut) throws IOException {
 
         StringBuilder html = new StringBuilder();
@@ -15,7 +14,6 @@ public final class Json2Html {
         html.append("<!DOCTYPE ")
                 .append(root.path("doctype").asText())
                 .append(">\n");
-
         if (root.path("language").isTextual()) {
             html.append("<html lang=\"")
                     .append(root.path("language").asText())
@@ -126,9 +124,7 @@ private static StringBuilder renderElement(String tag, JsonNode node, int ind) {
     if (node.isObject() && node.has("attributes")) {
         html.append(appendAttributes(node.get("attributes")));
     }
-
     html.append(">");
-
     if (node.isTextual()) {
         html.append(node.asText());
         html.append("</").append(tag).append(">\n");
@@ -165,7 +161,6 @@ private static StringBuilder appendAttributes(JsonNode attrs) {
                     .append("=\"")
                     .append(e.getValue().asText())
                     .append("\"");
-        }
-    });
+        }});
         return html;
 }}
