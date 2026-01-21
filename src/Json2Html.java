@@ -7,9 +7,7 @@ import java.io.IOException;
 
 public final class Json2Html {
 
-   // private static final StringBuilder html = new StringBuilder();
-
-    public static void renderDoc(String fileIn, String fileOut) throws IOException {
+     public static void renderDoc(String fileIn, String fileOut) throws IOException {
 
         StringBuilder html = new StringBuilder();
         ObjectMapper mapper = new ObjectMapper();
@@ -37,18 +35,18 @@ private static void writeToFile(String out, StringBuilder html) throws IOExcepti
         IO.println("HTML written to file" + out + ".html");
     }
 
-private static String indent(int x) {
+private static StringBuilder indent(int x) {
     String add = "\t";
-    String indent = "";
+    StringBuilder indent = new StringBuilder();
     while (x > 0) {
-        indent = indent.concat(add);
+         indent.append(add);
         x--;
     }
     return indent;
     }
 
 private static StringBuilder renderHead(JsonNode head) {
-    indent(2);
+
     StringBuilder html = new StringBuilder();
     html.append("\t<head>\n");
     JsonNode meta = head.path("meta");
@@ -113,7 +111,7 @@ private static StringBuilder renderBody(JsonNode body) {
 
     body.fields().forEachRemaining(e -> {
         if (!e.getKey().equals("attributes")) {
-            html.append(renderElement(e.getKey(), e.getValue()));
+            html.append(renderElement(e.getKey(), e.getValue(), 2));
         }
     });
 
@@ -121,9 +119,9 @@ private static StringBuilder renderBody(JsonNode body) {
     return html;
 }
 
-private static StringBuilder renderElement(String tag, JsonNode node) {
+private static StringBuilder renderElement(String tag, JsonNode node, int ind) {
     StringBuilder html = new StringBuilder();
-    html.append("\t\t<").append(tag);
+    html.append(indent(ind)).append("<").append(tag);
 
     if (node.isObject() && node.has("attributes")) {
         html.append(appendAttributes(node.get("attributes")));
@@ -135,13 +133,13 @@ private static StringBuilder renderElement(String tag, JsonNode node) {
         html.append(node.asText());
         html.append("</").append(tag).append(">\n");
     } else if (node.isObject()) {
-        html.append("\n\t");
+        html.append("\n");
         node.fields().forEachRemaining(e -> {
             if (!e.getKey().equals("attributes")) {
-                html.append(renderElement(e.getKey(), e.getValue()));
+                html.append(renderElement(e.getKey(), e.getValue(), ind + 1));
             }
         });
-        html.append("\t\t</").append(tag).append(">\n");
+        html.append(indent(ind)).append("</").append(tag).append(">\n");
     }
     return html;
 }
